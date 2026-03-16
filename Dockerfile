@@ -10,7 +10,7 @@ RUN npm ci --production=false --silent || npm install --silent
 COPY . .
 
 # Build the TypeScript project into dist
-RUN npx esbuild src/main.ts --bundle --platform=node --outfile=dist/main.cjs --target=node18 --format=cjs && chmod +x dist/main.js
+RUN npx esbuild src/main.ts --bundle --platform=node --outfile=dist/main.cjs --target=node18 --format=cjs && chmod +x dist/main.cjs
 FROM node:20-bullseye-slim
 
 WORKDIR /app
