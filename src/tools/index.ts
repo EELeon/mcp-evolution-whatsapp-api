@@ -1,5 +1,4 @@
 import type { ToolRegistration } from "../types";
-import { someFunctionTool } from "./exampleTool/index.js";
 import { createEvolutionInstanceTool } from "./createEvolutionInstance/index.js";
 import { getEvolutionInfoTool } from "./getEvolutionInfo/index.js";
 import { fetchEvolutionInstancesTool } from "./fetchEvolutionInstances/index.js";
