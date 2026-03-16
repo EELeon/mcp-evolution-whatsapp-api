@@ -15,13 +15,13 @@
   "module": "main.ts",
   "type": "module",
   "bin": {
-    "mcp-starter": "dist/index.js"
+    "mcp-starter": "dist/main.js"
   },
   "files": [
     "dist"
   ],
   "scripts": {
-  "build": "npx esbuild src/main.ts --bundle --platform=node --outfile=dist/main.js --target=node18 --format=esm && chmod +x dist/main.js",
+  "build": "npx esbuild src/main.ts --bundle --platform=node --outfile=dist/main.js --target=node18 --format=esm --packages=external && chmod +x dist/main.js",
   "start": "node dist/main.js",
   "dev": "node --loader ts-node/esm src/main.ts",
   "test": "npx bun:test || echo \"No bun test runner configured\"",
@@ -40,6 +40,7 @@
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
     "@types/bun": "latest",
+    "@types/express": "^5.0.0",
     "@types/node": "^24.7.0",
     "esbuild": "^0.25.10",
     "standard-version": "^9.5.0",
@@ -50,10 +51,10 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.1.1",
+    "@modelcontextprotocol/sdk": "^1.27.1",
     "@types/json-schema": "^7.0.15",
     "axios": "^1.8.4",
-    "pretty-js-log": "^1.1.1",
+    "express": "^4.21.0",
     "zod": "^3.24.1",
     "zod-to-json-schema": "^3.24.1"
   }

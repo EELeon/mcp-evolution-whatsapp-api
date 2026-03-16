@@ -10,18 +10,18 @@ export class EvolutionApi {
 
   constructor() {
     // Get API credentials from environment variables
-    this.serverUrl = process.env.EVOLUTION_API_URL || 'https://your-url.xyz';
-    // Remove trailing slash if present
-    this.serverUrl = this.serverUrl.endsWith('/') ? this.serverUrl.slice(0, -1) : this.serverUrl;
-    this.apiKey = process.env.EVOLUTION_API_KEY || 'your-api-key';
-
-    if (!this.serverUrl) {
+    const serverUrl = process.env.EVOLUTION_API_URL;
+    if (!serverUrl) {
       throw new Error('EVOLUTION_API_URL environment variable is not set');
     }
+    // Remove trailing slash if present
+    this.serverUrl = serverUrl.endsWith('/') ? serverUrl.slice(0, -1) : serverUrl;
 
-    if (!this.apiKey) {
+    const apiKey = process.env.EVOLUTION_API_KEY;
+    if (!apiKey) {
       throw new Error('EVOLUTION_API_KEY environment variable is not set');
     }
+    this.apiKey = apiKey;
 
     this.axiosInstance = axios.create({
       baseURL: this.serverUrl,

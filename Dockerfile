@@ -1,14 +1,15 @@
-FROM oven/bun:1 AS builder
+FROM node:20-slim AS builder
 WORKDIR /app
-COPY package.json bun.lockb* ./
-RUN bun install
+COPY package.json package-lock.json ./
+RUN npm ci
 COPY . .
-RUN bun run build
+RUN npm run build
 
-FROM oven/bun:1-slim
+FROM node:20-slim
 WORKDIR /app
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY package.json ./
+ENV NODE_ENV=production
 EXPOSE 3000
-CMD ["bun", "run", "dist/main.js"]
+CMD ["node", "dist/main.js"]

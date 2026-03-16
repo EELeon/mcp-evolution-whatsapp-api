@@ -4,108 +4,127 @@
 export const VERSION = "0.1.0";
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import {
 	CallToolRequestSchema,
 	ListToolsRequestSchema,
 	type CallToolRequest,
 } from "@modelcontextprotocol/sdk/types.js";
+import express from "express";
 import { createTools } from "./tools/index.js";
 
+const app = express();
+const PORT = parseInt(process.env.PORT || "3000", 10);
 
-/* You can remove this section if you don't need to validate command line arguments */
-/* You'll have to handle the error yourself */
-/*
-const expectedArgs = [
-	"expected-arg-1",
-	"expected-arg-2",
-]
-const args = process.argv.slice(2);
-if (args.length < expectedArgs.length) {
-	console.error("CLI arguments not provided. If you are getting this error and don't know why, you probably need to remove CLI argument logic in main.ts");
-	process.exit(1);
-}
-*/
+// Store active transports for SSE connections
+const transports = new Map<string, SSEServerTransport>();
 
-// Initialize server
-const server = new Server(
-	{
-		name: "Evolution API MCP Server",
-		version: VERSION,
-	},
-	{
-		capabilities: {
-			tools: {},
+function createServer() {
+	const server = new Server(
+		{
+			name: "Evolution API MCP Server",
+			version: VERSION,
 		},
-	},
-);
+		{
+			capabilities: {
+				tools: {},
+			},
+		},
+	);
 
-const tools = createTools();
+	const tools = createTools();
 
-// Register tools
-server.setRequestHandler(ListToolsRequestSchema, async () => {
-	// Return tools with their schemas but without handlers
-	return {
-		tools: tools.map(({ handler, ...tool }) => ({
-			name: tool.name,
-			description: tool.description,
-			inputSchema: tool.inputSchema,
-		})),
-	};
-});
-
-// Register tool handlers
-server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest) => {
-	try {
-		const { name, arguments: args } = request.params;
-		const tool = tools.find((t) => t.name === name);
-
-		if (!tool) {
-			throw new Error(`Unknown tool: ${name}`);
-		}
-
-		// Execute tool handler and catch any authentication errors
-		try {
-			return await tool.handler(args);
-		} catch (error) {
-			// If this is an authentication error, provide a more user-friendly message
-			if (error instanceof Error && 
-			   (error.message.includes('EVOLUTION_API_KEY') || 
-				error.message.includes('EVOLUTION_API_URL'))) {
-				return {
-					content: [
-						{
-							type: "text",
-							text: "Authentication required: Please provide your Evolution API credentials in the configuration settings.",
-						},
-					],
-					isError: true,
-				};
-			}
-			// Re-throw other errors
-			throw error;
-		}
-	} catch (error) {
+	// Register tools
+	server.setRequestHandler(ListToolsRequestSchema, async () => {
 		return {
-			content: [
-				{
-					type: "text",
-					text: `Error: ${error instanceof Error ? error.message : String(error)}`,
-				},
-			],
-			isError: true,
+			tools: tools.map(({ handler, ...tool }) => ({
+				name: tool.name,
+				description: tool.description,
+				inputSchema: tool.inputSchema,
+			})),
 		};
-	}
-});
+	});
 
-// Start server
-async function runServer() {
-	const transport = new StdioServerTransport();
-	await server.connect(transport);
-	console.error("Evolution API MCP Server running on stdio");
+	// Register tool handlers
+	server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest) => {
+		try {
+			const { name, arguments: args } = request.params;
+			const tool = tools.find((t) => t.name === name);
+
+			if (!tool) {
+				throw new Error(`Unknown tool: ${name}`);
+			}
+
+			try {
+				return await tool.handler(args);
+			} catch (error) {
+				if (error instanceof Error &&
+					(error.message.includes('EVOLUTION_API_KEY') ||
+						error.message.includes('EVOLUTION_API_URL'))) {
+					return {
+						content: [
+							{
+								type: "text",
+								text: "Authentication required: Please provide your Evolution API credentials in the configuration settings.",
+							},
+						],
+						isError: true,
+					};
+				}
+				throw error;
+			}
+		} catch (error) {
+			return {
+				content: [
+					{
+						type: "text",
+						text: `Error: ${error instanceof Error ? error.message : String(error)}`,
+					},
+				],
+				isError: true,
+			};
+		}
+	});
+
+	return server;
 }
 
-runServer().catch((error) => {
-	console.error("Fatal error running server:", error);
-	process.exit(1);
+// Health check endpoint
+app.get("/health", (_req, res) => {
+	res.json({ status: "ok", version: VERSION });
+});
+
+// SSE endpoint - client connects here to receive events
+app.get("/sse", async (req, res) => {
+	const transport = new SSEServerTransport("/messages", res);
+	const sessionId = transport.sessionId;
+	transports.set(sessionId, transport);
+
+	const server = createServer();
+
+	res.on("close", () => {
+		transports.delete(sessionId);
+		server.close().catch(console.error);
+	});
+
+	await server.connect(transport);
+});
+
+// Messages endpoint - client sends messages here
+app.post("/messages", express.json(), async (req, res) => {
+	const sessionId = req.query.sessionId as string;
+	const transport = transports.get(sessionId);
+
+	if (!transport) {
+		res.status(400).json({ error: "No active SSE connection for this session" });
+		return;
+	}
+
+	await transport.handlePostMessage(req, res);
+});
+
+app.listen(PORT, "0.0.0.0", () => {
+	console.log(`Evolution API MCP Server listening on port ${PORT}`);
+	console.log(`SSE endpoint: http://0.0.0.0:${PORT}/sse`);
+	console.log(`Health check: http://0.0.0.0:${PORT}/health`);
 });
