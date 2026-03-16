@@ -10,7 +10,7 @@ RUN npm ci --production=false --silent || npm install --silent
 COPY . .
 
 # Build the TypeScript project into dist
-RUN npx esbuild src/main.ts --bundle --platform=node --outfile=dist/main.js --target=node18 --format=cjs && chmod +x dist/main.js
+RUN npx esbuild src/main.ts --bundle --platform=node --outfile=dist/main.cjs --target=node18 --format=cjs && chmod +x dist/main.js
 FROM node:20-bullseye-slim
 
 WORKDIR /app
@@ -25,4 +25,4 @@ RUN npm ci --production --silent || npm install --production --silent
 EXPOSE 3000
 
 # Start with node (script expects to run as a stdio MCP server)
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/main.cjs"]
