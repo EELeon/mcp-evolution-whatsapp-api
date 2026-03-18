@@ -122,21 +122,22 @@ app.post("/mcp", express.json(), async (req, res) => {
 	const server = createServer();
 	await server.connect(transport);
 
-	// Store transport after connection so sessionId is available
-	const newSessionId = transport.sessionId;
-	if (newSessionId) {
-		streamableTransports.set(newSessionId, transport);
-	}
-
 	transport.onclose = () => {
-		if (newSessionId) {
-			streamableTransports.delete(newSessionId);
+		const sid = transport.sessionId;
+		if (sid) {
+			streamableTransports.delete(sid);
 		}
 		server.close().catch(console.error);
 	};
 
-	// Handle the current request
+	// Handle the current request FIRST — sessionId is generated during handleRequest
 	await transport.handleRequest(req, res, req.body);
+
+	// Store transport AFTER handleRequest so sessionId is available
+	const newSessionId = transport.sessionId;
+	if (newSessionId) {
+		streamableTransports.set(newSessionId, transport);
+	}
 });
 
 // Handle GET /mcp - SSE stream for server-initiated messages
