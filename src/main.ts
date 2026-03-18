@@ -127,10 +127,13 @@ app.post("/mcp", express.json(), async (req, res) => {
 		if (sid) {
 			streamableTransports.delete(sid);
 		}
+		// Nullify onclose before server.close() to prevent infinite recursion
+		// (server.close -> transport.close -> onclose -> server.close -> ...)
+		transport.onclose = undefined;
 		server.close().catch(console.error);
 	};
 
-	// Handle the current request FIRST — sessionId is generated during handleRequest
+	// Handle the current request FIRST â sessionId is generated during handleRequest
 	await transport.handleRequest(req, res, req.body);
 
 	// Store transport AFTER handleRequest so sessionId is available
