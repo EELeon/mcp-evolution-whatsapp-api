@@ -36,11 +36,6 @@ import { getMessagesByContactTool } from "./getMessagesByContact/index.js";
 export const createTools = (): ToolRegistration<any>[] => {
 	return [
 		{
-			...someFunctionTool,
-			// biome-ignore lint/suspicious/noExplicitAny: All tools validate their input schemas, so any is fine.
-			handler: (args: any) => someFunctionTool.handler(args),
-		},
-		{
 			...createEvolutionInstanceTool,
 			// biome-ignore lint/suspicious/noExplicitAny: All tools validate their input schemas, so any is fine.
 			handler: (args: any) => createEvolutionInstanceTool.handler(args),
