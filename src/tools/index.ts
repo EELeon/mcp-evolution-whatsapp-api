@@ -28,6 +28,9 @@ import { findGroupByJidTool } from "./findGroupByJid/index.js";
 import { findGroupMembersTool } from "./findGroupMembers/index.js";
 import { findChatsTool } from "./findChats/index.js";
 import { findContactsTool } from "./findContacts/index.js";
+import { getMessagesTodayTool } from "./getMessagesToday/index.js";
+import { getMessagesYesterdayTool } from "./getMessagesYesterday/index.js";
+import { getMessagesByContactTool } from "./getMessagesByContact/index.js";
 
 // biome-ignore lint/suspicious/noExplicitAny: Any is fine here because all tools validate their input schemas.
 export const createTools = (): ToolRegistration<any>[] => {
@@ -181,6 +184,21 @@ export const createTools = (): ToolRegistration<any>[] => {
 			...findContactsTool,
 			// biome-ignore lint/suspicious/noExplicitAny: All tools validate their input schemas, so any is fine.
 			handler: (args: any) => findContactsTool.handler(args),
+		},
+		{
+			...getMessagesTodayTool,
+			// biome-ignore lint/suspicious/noExplicitAny: All tools validate their input schemas, so any is fine.
+			handler: (args: any) => getMessagesTodayTool.handler(args),
+		},
+		{
+			...getMessagesYesterdayTool,
+			// biome-ignore lint/suspicious/noExplicitAny: All tools validate their input schemas, so any is fine.
+			handler: (args: any) => getMessagesYesterdayTool.handler(args),
+		},
+		{
+			...getMessagesByContactTool,
+			// biome-ignore lint/suspicious/noExplicitAny: All tools validate their input schemas, so any is fine.
+			handler: (args: any) => getMessagesByContactTool.handler(args),
 		},
 	];
 };
